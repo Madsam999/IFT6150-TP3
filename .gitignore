@@ -1,3 +1,9 @@
 *.pgm
 *.o
 TpIFT6150-3-A
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
