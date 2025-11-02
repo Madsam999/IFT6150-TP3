@@ -1,6 +1,6 @@
 /*------------------------------------------------------*/
 /* Prog    : TpIFT6150-3-A.c                            */
-/* Auteur  :                                            */
+/* Auteur  : Samuel Fournier & Alexandre Toutant        */
 /* Date    :                                            */
 /* version :                                            */ 
 /* langage : C                                          */
@@ -26,22 +26,22 @@
 #define NAME_IMG_OUT2 "photograph_debruite_B"
 
 
-int main(int argc,char** argv){
-  int i,j,k,l;
-  int length,width;
-  int nbLevels;
+int main(int argc,char** argv) {
+    int i,j,k,l;
+    int length,width;
+    int nbLevels;
 	
 	float threshold;
 	float var;   
 	
 	printf("Entrez la variance du bruit: ");
-  scanf("%f",&var);
+    scanf("%f",&var);
 	
 	printf("Entrez le nombre de niveaux a traiter : ");
-  scanf("%d",&nbLevels);
+    scanf("%d",&nbLevels);
 		
 	printf("Entrez le seuil : ");
-  scanf("%f",&threshold);
+    scanf("%f",&threshold);
 
 	/* ouvrir l'image d'entree */
 
@@ -53,7 +53,7 @@ int main(int argc,char** argv){
  
  	/* sauvegarder les images */
  
-  /*retour sans probleme*/ 
-  printf("\n C'est fini ... \n\n\n");
-  return 0; 	 
+    /*retour sans probleme*/ 
+    printf("\n C'est fini ... \n\n\n");
+    return 0; 	 
 }
