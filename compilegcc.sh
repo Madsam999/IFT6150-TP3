@@ -1,4 +1,4 @@
-echo 
+echo
 echo compilation du programme ${a=${1}.c}
 
 gcc -c FonctionDemo3.c
