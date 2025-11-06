@@ -43,11 +43,19 @@ double compute_isnr(float** f, float** g, float** u, int H, int W){
     return 10.0*log10(num/den);
 }
 
-void buildLowPassFilter(float** h, int L, int W, int H){
-    for(int i=0;i<H;i++) for(int j=0;j<W;j++) h[i][j]=0.f;
-    float amp=1.0f/SQUARE(L); int half=L/2;
-    for(int di=0;di<L;di++) for(int dj=0;dj<L;dj++){
-        int ii=(di-half+H)%H, jj=(dj-half+W)%W; h[ii][jj]=amp;
+void buildLowPassFilter(float** filterReal, int L, int width, int height) {
+
+    float amplitude = 1 / SQUARE(L);
+
+    for(int i = 0; i < height; i++) {
+        for(int j = 0; j < width; j++) {
+            if((i < L / 2 || i >= height - L / 2) && (j < L / 2 || j >= width - L / 2)) {
+                filterReal[i][j] = amplitude;
+            }
+            else {
+                filterReal[i][j] = 0.f;
+            }
+        }
     }
 }
 
@@ -128,7 +136,19 @@ int main(int argc, char* argv) {
     float** hReal = fmatrix_allocate_2d(height, width);
     float** hComplex = fmatrix_allocate_2d(height, width);
 
-    buildLowPassFilter(hReal, sizeFilter, width, height);
+    float amplitude = 1.0 / SQUARE(sizeFilter);
+
+    for(int i = 0; i < height; i++) {
+        for(int j = 0; j < width; j++) {
+            if((i < sizeFilter / 2.0 || i >= height - sizeFilter / 2.0) && (j < sizeFilter / 2.0 || j >= width - sizeFilter / 2.0)) {
+                hReal[i][j] = amplitude;
+            }
+            else {
+                hReal[i][j] = 0.f;
+            }
+            hComplex[i][j] = 0.f;
+        }
+    }
 
     // Fourier Transform
     FFTDD(hReal, hComplex, height, width);
