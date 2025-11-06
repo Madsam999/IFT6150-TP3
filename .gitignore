@@ -1,6 +1,8 @@
 *.pgm
 *.o
 TpIFT6150-3-A
+TpIFT6150-3-B
+TpIFT6150-3-C
 *.aux
 *.fdb_latexmk
 *.fls

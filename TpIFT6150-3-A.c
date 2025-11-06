@@ -37,22 +37,21 @@ void addmatrix(float** resultReal, float** resultComplex, float** mat1Real, floa
     }
 }
 
-void buildLowPassFilter(float** filterReal, int L, int width, int height) {
+double compute_isnr(float** f, float** g, float** u, int H, int W){
+    double num=0.0, den=0.0;
+    for(int i=0;i<H;i++) for(int j=0;j<W;j++){ double e1=f[i][j]-g[i][j], e2=f[i][j]-u[i][j]; num+=e1*e1; den+=e2*e2; }
+    return 10.0*log10(num/den);
+}
 
-    float amplitude = 1 / SQUARE(L);
-
-    for(int i = 0; i < height; i++) {
-        for(int j = 0; j < width; j++) {
-            if((i < L / 2 || i >= height - L / 2) && (j < L / 2 || j >= width - L / 2)) {
-                filterReal[i][j] = amplitude;
-            }
-            else {
-                filterReal[i][j] = 0.f;
-            }
-        }
+void buildLowPassFilter(float** h, int L, int W, int H){
+    for(int i=0;i<H;i++) for(int j=0;j<W;j++) h[i][j]=0.f;
+    float amp=1.0f/SQUARE(L); int half=L/2;
+    for(int di=0;di<L;di++) for(int dj=0;dj<L;dj++){
+        int ii=(di-half+H)%H, jj=(dj-half+W)%W; h[ii][jj]=amp;
     }
 }
 
+/* Landweber: f^{k+1} = f^k + alpha * H* F(g - H f^k) */
 void landweber(float** fReal, float** fComplex, float** gReal, 
                float** gComplex, float** filterReal, float** filterComplex, 
                float** imageReal, int width, int height, int nbIteration,
@@ -92,10 +91,11 @@ void landweber(float** fReal, float** fComplex, float** gReal,
         Mult(intermed1Real, alpha, height, width);
         Mult(intermed1Complex, alpha, height, width);
 
-        addmatrix(fReal, fComplex, intermed1Real, intermed1Complex, fReal, fComplex, height, width);       
+        addmatrix(fReal, fComplex, intermed1Real, intermed1Complex, fReal, fComplex, height, width);    
+        
+        double isnr = compute_isnr(imageReal,gReal,fReal,height,width);
+        printf("Landweber iter %d: ISNR = %.3f\n", k+1, isnr);
     }
-
-    SaveImagePgm("temp", fReal, height, width);
 
     free_fmatrix_2d(intermed1Complex);
     free_fmatrix_2d(intermed1Real);
@@ -112,6 +112,7 @@ int main(int argc, char* argv) {
     float** imageReal;
     float** imageComplex;
 
+    // Load initial image and initialize imaginary matrix
     imageReal = LoadImagePgm(NAME_IMG_IN, &height, &width);
     imageComplex = fmatrix_allocate_2d(height, width);
     for(int i = 0; i < height; i++) {
@@ -120,39 +121,37 @@ int main(int argc, char* argv) {
         }
     }
 
-    FFTDD(imageReal, imageComplex, height, width);
-
     printf("Entrez la largeur du filtre passe bas: ");
     scanf("%d", &sizeFilter);
 
-    float** lowPassFilterReal = fmatrix_allocate_2d(height, width);
-    float** lowPassFilterComplex = fmatrix_allocate_2d(height, width);
+    // Creation of sizeFilter x sizeFilter filter
+    float** hReal = fmatrix_allocate_2d(height, width);
+    float** hComplex = fmatrix_allocate_2d(height, width);
 
-    float amplitude = 1.0 / SQUARE(sizeFilter);
+    buildLowPassFilter(hReal, sizeFilter, width, height);
 
-    for(int i = 0; i < height; i++) {
-        for(int j = 0; j < width; j++) {
-            if((i < sizeFilter / 2.0 || i >= height - sizeFilter / 2.0) && (j < sizeFilter / 2.0 || j >= width - sizeFilter / 2.0)) {
-                lowPassFilterReal[i][j] = amplitude;
-            }
-            else {
-                lowPassFilterReal[i][j] = 0.f;
-            }
-            lowPassFilterComplex[i][j] = 0.f;
-        }
-    }
+    // Fourier Transform
+    FFTDD(hReal, hComplex, height, width);
+    FFTDD(imageReal, imageComplex, height, width);
 
-    FFTDD(lowPassFilterReal, lowPassFilterComplex, height, width);
-
+    // Create result image of f x h (image with blur)
     float** gReal = fmatrix_allocate_2d(height, width);
     float** gComplex = fmatrix_allocate_2d(height, width);
 
-    MultMatrix(gReal, gComplex, lowPassFilterReal, lowPassFilterComplex, imageReal, imageComplex, height, width);
+    // Convolution --FFT-> Product
+    MultMatrix(gReal, gComplex, hReal, hComplex, imageReal, imageComplex, height, width);
 
+    // Revert Fourier Transform
     IFFTDD(gReal, gComplex, height, width);
     IFFTDD(imageReal, imageComplex, height, width);
     SaveImagePgm(NAME_IMG_OUT1, imageReal, height, width);
-    SaveImagePgm(NAME_IMG_OUT2, gReal, height, width);
+    
+    // Temporary matrix to save gReal
+    float** gOut = fmatrix_allocate_2d(height, width);
+    copy(gOut, gReal, height, width);
+    Recal(gOut, height, width);
+    SaveImagePgm(NAME_IMG_OUT2, gOut, height, width);
+    free_fmatrix_2d(gOut);
 
     printf("Entrez le nombre d'itérations pour LANDWEBER: ");
     scanf("%d", &nbIterations);
@@ -160,9 +159,23 @@ int main(int argc, char* argv) {
     float** fReal = fmatrix_allocate_2d(height, width);
     float** fComplex = fmatrix_allocate_2d(height, width);
 
-    landweber(fReal, fComplex, gReal, gComplex, lowPassFilterReal, lowPassFilterComplex, imageReal, width, height, nbIterations, 1);
+    for(int i = 0; i < height; i++) {
+        for(int j = 0; j < width; j++) {
+            fComplex[i][j] = 0.f;
+        }
+    }
 
-    printf("Entrez la variance du bruit : ");
+    landweber(fReal, fComplex, gReal, gComplex, hReal, hComplex, imageReal, width, height, nbIterations, 1);
+
+    // Save image
+    float** fOut = fmatrix_allocate_2d(height, width);
+    copy(fOut, fReal, height, width);
+    Recal(fOut, height, width);
+    SaveImagePgm(NAME_IMG_OUT3, fOut, height, width);
+    free_fmatrix_2d(fOut);
+
+
+    printf("Entrez la variance du bruit (sigma^2): ");
     scanf("%f",&var);
 	
     /* Ajouter du bruit a l'image floue : g = g + bruit = image + flou + bruit (add_gaussian_noise) */
@@ -172,10 +185,44 @@ int main(int argc, char* argv) {
 	/* du bruit) avec LANDWEBER.                           */
 	/* N'oubliez pas d'afficher le ISNR a chaque iteration */
 	/*******************************************************/
-		
-    /*Sauvegarde des images */
+
+    FFTDD(imageReal, imageComplex, height, width);
+    MultMatrix(gReal, gComplex, imageReal, imageComplex, hReal, hComplex, height, width);
+
+    IFFTDD(gReal, gComplex, height, width);
+    IFFTDD(imageReal, imageComplex, height, width);
+    
+    add_gaussian_noise(gReal, height, width, var);
+
+    SaveImagePgm(NAME_IMG_OUT4, gReal, height, width);
+
+    for(int i = 0; i < height; i++) {
+        for(int j = 0; j < width; j++) {
+            fReal[i][j] = 0.f;
+            fComplex[i][j] = 0.f;
+        }
+    }
+
+    landweber(fReal, fComplex, gReal, gComplex, hReal, hComplex, imageReal, width, height, nbIterations, 1);
+	
+    
+    // Save image
+    fOut = fmatrix_allocate_2d(height, width);
+    copy(fOut, fReal, height, width);
+    Recal(fOut, height, width);
+    SaveImagePgm(NAME_IMG_OUT5, fOut, height, width);
+    free_fmatrix_2d(fOut);
 
     /*Liberation memoire*/
+
+    free_fmatrix_2d(imageComplex);
+    free_fmatrix_2d(imageReal);
+    free_fmatrix_2d(hReal);
+    free_fmatrix_2d(hComplex);
+    free_fmatrix_2d(gReal);
+    free_fmatrix_2d(gComplex);
+    free_fmatrix_2d(fReal);
+    free_fmatrix_2d(fComplex);
   
     /*retour sans probleme*/ 
     printf("\n C'est fini ... \n\n\n");

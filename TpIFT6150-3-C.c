@@ -39,6 +39,12 @@ double compute_isnr(float** f, float** g, float** u, int H, int W){
     return 10.0*log10(num/den);
 }
 
+float computeDiff() {
+    float diff = 0.f;
+
+    return diff;
+}
+
 /* Landweber: f^{k+1} = f^k + alpha * H* F(g - H f^k) */
 void landweber(float** fR, float** fI, float** gR, float** gI,float** Hre, float** Him, float** fTrue,int W, int H, int iters, float alpha){
     for(int i=0;i<H;i++){
@@ -80,6 +86,15 @@ void landweber(float** fR, float** fI, float** gR, float** gI,float** Hre, float
     free_fmatrix_2d(t2I); free_fmatrix_2d(t2R);
 }
 
+void figueiredoNowak() {
+    int k = 0;
+    // 1. 25 Iterations of Landweber
+
+    // 2. While not 3x10^-5 do 
+    // 2.1 1 Iteration of landweber
+    // 2.2 Decomposition
+}
+
 int main(int argc, char** argv){
     int H, W, L, iters;
     float var;
@@ -111,7 +126,7 @@ int main(int argc, char** argv){
     IFFTDD(f, fI, H, W);
     SaveImagePgm(NAME_IMG_OUT1, f, H, W);
 
-    add_gaussian_noise(gR, H, W, var);
+    //add_gaussian_noise(gR, H, W, var);
 
     // sauvegarde de l'image dégradée
     float** gView = fmatrix_allocate_2d(H, W);
