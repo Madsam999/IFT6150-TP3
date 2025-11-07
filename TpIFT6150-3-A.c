@@ -1,5 +1,5 @@
 /*------------------------------------------------------*/
-/* Prog    : TpIFT6150-3-B.c                            */
+/* Prog    : TpIFT6150-3-A.c                            */
 /* Auteur  : Samuel Fournier & Alexandre Toutant        */
 /* Date    : 2025-11-05                                 */
 /* version : 1.0                                        */
@@ -194,24 +194,16 @@ int main(int argc, char* argv) {
     SaveImagePgm(NAME_IMG_OUT3, fOut, height, width);
     free_fmatrix_2d(fOut);
 
-
     printf("Entrez la variance du bruit (sigma^2): ");
     scanf("%f",&var);
-	
-    /* Ajouter du bruit a l'image floue : g = g + bruit = image + flou + bruit (add_gaussian_noise) */
- 
-    /*******************************************************/
-	/* restorer l'image g (elle contient du flou ainsi que */
-	/* du bruit) avec LANDWEBER.                           */
-	/* N'oubliez pas d'afficher le ISNR a chaque iteration */
-	/*******************************************************/
 
     FFTDD(imageReal, imageComplex, height, width);
     MultMatrix(gReal, gComplex, imageReal, imageComplex, hReal, hComplex, height, width);
 
     IFFTDD(gReal, gComplex, height, width);
     IFFTDD(imageReal, imageComplex, height, width);
-    
+
+    /* Ajouter du bruit a l'image floue : g = g + bruit = image + flou + bruit (add_gaussian_noise) */
     add_gaussian_noise(gReal, height, width, var);
 
     SaveImagePgm(NAME_IMG_OUT4, gReal, height, width);
@@ -234,7 +226,6 @@ int main(int argc, char* argv) {
     free_fmatrix_2d(fOut);
 
     /*Liberation memoire*/
-
     free_fmatrix_2d(imageComplex);
     free_fmatrix_2d(imageReal);
     free_fmatrix_2d(hReal);

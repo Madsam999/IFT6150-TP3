@@ -42,9 +42,7 @@ float diffSquared(float** mat1, float** mat2, int width, int height) {
 
 float computeISNR(float** fReal, float** gReal, float** imageReal, int width, int height) {
     float isnr;
-
     isnr = 10 * log10f(diffSquared(imageReal, gReal, width, height) / diffSquared(imageReal, fReal, width, height));
-
     return isnr;
 }
 
@@ -216,7 +214,7 @@ int main(int argc, char** argv){
         // Calculer le ISNR        
         isnr = computeISNR(fReal, gReal, imageReal, width, height);
 
-        printf("%02d - ISNR : %lf\n", k, isnr);
+        printf("%02d - ISNR : %lf\n", k+1, isnr);
 
         float num = diffSquared(fReal, fPrev, width, height);
         float denum = diffSquared(fPrev, zeros, width, height);
@@ -229,8 +227,7 @@ int main(int argc, char** argv){
     Recal(fReal, height, width);
     SaveImagePgm(NAME_IMG_OUT3, fReal, height, width);
 
-
-    // 7. Free memory
+    // Retour sans problème
     printf("\nC'est fini ...\n\n");
     return 0;
 }

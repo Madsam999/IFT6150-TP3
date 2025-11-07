@@ -1,5 +1,5 @@
 /*------------------------------------------------------*/
-/* Prog    : TpIFT6150-3-A.c                            */
+/* Prog    : TpIFT6150-3-B.c                            */
 /* Auteur  : Samuel Fournier & Alexandre Toutant        */
 /* Date    : 2025-11-05                                 */
 /* version : 1.0                                        */
