@@ -189,7 +189,11 @@ int main(int argc, char* argv) {
 
     // Save image
     float** fOut = fmatrix_allocate_2d(height, width);
-    copy(fOut, fReal, height, width);
+    for(int i = 0; i < height; i++) {
+        for(int j = 0; j < width; j++) {
+            fOut[i][j] = fReal[i][j];
+        }
+    }
     Recal(fOut, height, width);
     SaveImagePgm(NAME_IMG_OUT3, fOut, height, width);
     free_fmatrix_2d(fOut);
@@ -220,7 +224,11 @@ int main(int argc, char* argv) {
     
     // Save image
     fOut = fmatrix_allocate_2d(height, width);
-    copy(fOut, fReal, height, width);
+    for(int i = 0; i < height; i++) {
+        for(int j = 0; j < width; j++) {
+            fOut[i][j] = fReal[i][j];
+        }
+    }
     Recal(fOut, height, width);
     SaveImagePgm(NAME_IMG_OUT5, fOut, height, width);
     free_fmatrix_2d(fOut);
